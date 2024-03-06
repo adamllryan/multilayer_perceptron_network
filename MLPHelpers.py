@@ -3,10 +3,10 @@ from typing import Callable
 
 
 class ActivationFunction:
-    def sigmoid(x: np.ndarray) -> np.ndarray:
+    def _sigmoid(x: np.ndarray) -> np.ndarray:
         return 1 / (1 + np.exp(-x))
 
-    def sigmoid_derivative(x: np.ndarray) -> np.ndarray:
+    def _sigmoid_derivative(x: np.ndarray) -> np.ndarray:
         func = ActivationFunction.sigmoid
         return func(x) * (1 - func(x))
 
@@ -21,16 +21,16 @@ class ActivationFunction:
 
     def get(name: str) -> callable:
         if name == "sigmoid":
-            return (ActivationFunction.sigmoid, ActivationFunction.sigmoid_derivative)
+            return (ActivationFunction._sigmoid, ActivationFunction._sigmoid_derivative)
         else:
             raise ValueError("Activation function not found")
 
 
 class CostFunction:
-    def mean_squared_error(actual: np.ndarray, predicted: np.ndarray) -> float:
+    def _mean_squared_error(actual: np.ndarray, predicted: np.ndarray) -> float:
         return 0.5 * np.mean(np.square(actual - predicted))
 
-    def mean_squared_error_derivative(
+    def _mean_squared_error_derivative(
         actual: np.ndarray, predicted: np.ndarray
     ) -> np.ndarray:
         return predicted - actual
@@ -43,8 +43,8 @@ class CostFunction:
     def get(name: str) -> Callable:
         if name == "mean_squared_error":
             return (
-                CostFunction.mean_squared_error,
-                CostFunction.mean_squared_error_derivative,
+                CostFunction._mean_squared_error,
+                CostFunction._mean_squared_error_derivative,
             )
         else:
             raise ValueError("Cost function not found")
@@ -53,45 +53,45 @@ class CostFunction:
 class Regularization:
     # def l1(weights: np.ndarray, lambda_: float) -> float:
     # def l2(weights: np.ndarray, lambda_: float) -> float:
-    def none(weights: np.ndarray, lambda_: float) -> float:
+    def _none(weights: np.ndarray, lambda_: float) -> float:
         return 0
 
     def get(name: str) -> callable:
         if name == "none":
-            return Regularization.none
+            return Regularization._none
         else:
             raise ValueError("Regularization function not found")
 
 
 class Optimizer:
 
-    def sgd(error: np.ndarray, activator: Callable, weighted_sum: np.ndarray):
+    def _sgd(error: np.ndarray, activator: Callable, weighted_sum: np.ndarray):
         return -error * activator(weighted_sum)
 
     def get(name: str) -> callable:
         if name == "sgd":
-            return Optimizer.sgd
+            return Optimizer._sgd
         else:
             raise ValueError("Optimizer function not found")
 
 
 class LearningRateScheduler:
-    def constant(learning_rate: float, *args):
+    def _constant(learning_rate: float, *args):
         return learning_rate
 
-    def stochastic_approximation(learning_rate: float, iteration: int, *args):
+    def _stochastic_approximation(learning_rate: float, iteration: int, *args):
         return learning_rate / iteration
 
-    def search_then_converge(x: float, iteration: int, slope: float, *args):
+    def _search_then_converge(x: float, iteration: int, slope: float, *args):
         return x / (1 + iteration / slope)
 
     def get(name: str) -> callable:
         if name == "constant":
-            return LearningRateScheduler.constant
+            return LearningRateScheduler._constant
         elif name == "stochastic_approximation":
-            return LearningRateScheduler.stochastic_approximation
+            return LearningRateScheduler._stochastic_approximation
         elif name == "search_then_converge":
-            return LearningRateScheduler.search_then_converge
+            return LearningRateScheduler._search_then_converge
         else:
             raise ValueError("Learning rate scheduler not found")
 
@@ -110,7 +110,7 @@ class Normalization:
 
 class Initialization:
 
-    def random(
+    def _random(
         weights: list[int], seed: int = None, min: float = -1, max: float = 1
     ) -> list[np.ndarray]:
         np.random.seed(seed)
@@ -124,18 +124,18 @@ class Initialization:
 
     def get(name: str) -> callable:
         if name == "random":
-            return Initialization.random
+            return Initialization._random
         else:
             raise ValueError("Initialization function not found")
 
 
 class WeightUpdate:
-    def none(
-        weights: np.ndarray, gradients: np.ndarray, learning_rate: float
+    def _none(
+        weights: np.ndarray, gradients: np.ndarray, learning_rate: float, *args
     ) -> np.ndarray:
         return weights - learning_rate * gradients
 
-    def momentum(
+    def _momentum(
         weights: np.ndarray,
         gradients: np.ndarray,
         learning_rate: float,
@@ -146,8 +146,8 @@ class WeightUpdate:
 
     def get(name: str) -> callable:
         if name == "none":
-            return WeightUpdate.none
+            return WeightUpdate._none
         elif name == "momentum":
-            return WeightUpdate.momentum
+            return WeightUpdate._momentum
         else:
             raise ValueError("Weight update function not found")

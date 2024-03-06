@@ -187,7 +187,6 @@ if __name__ == "__main__":
     layers = [4, 4, 4, 1]
     mlp = MLPNetwork(layers)
     mlp.display()
-    # print(mlp.predict(np.random.rand(layers[0])))
     print("Model predicts: ", mlp.predict(np.array([0, 0, 0, 0])))
     mlp.train(np.array([0, 0, 0, 0]), np.array([0]), 100000)
     print("Model predicts: ", mlp.predict(np.array([0, 0, 0, 0])))
