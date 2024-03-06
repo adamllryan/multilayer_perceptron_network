@@ -1,4 +1,14 @@
 import numpy as np
+from MLPHelpers import (
+    ActivationFunction,
+    CostFunction,
+    Regularization,
+    Optimizer,
+    LearningRateScheduler,
+    Normalization,
+    Initialization,
+    WeightUpdate,
+)
 import multiprocessing as mp
 from typing import List, Tuple, Callable
 
@@ -10,128 +20,8 @@ from typing import List, Tuple, Callable
 
 
 class MLPNetwork:
-    class NeuralNetworkPlugins:
-        class ActivationFunction:
-            def sigmoid(x: np.ndarray) -> np.ndarray:
-                raise NotImplementedError
 
-            def sigmoid_derivative(x: np.ndarray) -> np.ndarray:
-                raise NotImplementedError
-
-            def tanh(x: np.ndarray) -> np.ndarray:
-                raise NotImplementedError
-
-            def tanh_derivative(x: np.ndarray) -> np.ndarray:
-                raise NotImplementedError
-
-            def relu(x: np.ndarray) -> np.ndarray:
-                raise NotImplementedError
-
-            def relu_derivative(x: np.ndarray) -> np.ndarray:
-                raise NotImplementedError
-
-            def leaky_relu(x: np.ndarray) -> np.ndarray:
-                raise NotImplementedError
-
-            def leaky_relu_derivative(x: np.ndarray) -> np.ndarray:
-                raise NotImplementedError
-
-        class CostFunction:
-            def mean_squared_error(y: np.ndarray, y_hat: np.ndarray) -> np.ndarray:
-                raise NotImplementedError
-
-            def mean_absolute_error(y: np.ndarray, y_hat: np.ndarray) -> np.ndarray:
-                raise NotImplementedError
-
-            def cross_entropy(y: np.ndarray, y_hat: np.ndarray) -> np.ndarray:
-                raise NotImplementedError
-
-        class Regularization:
-            def l1(weights: np.ndarray, regularization_rate: float) -> np.ndarray:
-                raise NotImplementedError
-
-            def l2(weights: np.ndarray, regularization_rate: float) -> np.ndarray:
-                raise NotImplementedError
-
-            def dropout(weights: np.ndarray, dropout_rate: float) -> np.ndarray:
-                raise NotImplementedError
-
-        class Optimizer:
-            def sgd(
-                weights: np.ndarray, gradients: np.ndarray, learning_rate: float
-            ) -> np.ndarray:
-                raise NotImplementedError
-
-            def momentum(
-                weights: np.ndarray,
-                gradients: np.ndarray,
-                momentums: np.ndarray,
-                learning_rate: float,
-                momentum: float,
-            ) -> np.ndarray:
-                raise NotImplementedError
-
-            def adam(
-                weights: np.ndarray,
-                gradients: np.ndarray,
-                momentums: np.ndarray,
-                learning_rate: float,
-                momentum: float,
-            ) -> np.ndarray:
-                raise NotImplementedError
-
-            def rmsprop(
-                weights: np.ndarray,
-                gradients: np.ndarray,
-                momentums: np.ndarray,
-                learning_rate: float,
-                momentum: float,
-            ) -> np.ndarray:
-                raise NotImplementedError
-
-        class LearningMode:
-            def batch(x, *args):
-                raise NotImplementedError
-
-            def mini_batch(x, *args):
-                raise NotImplementedError
-
-            def stochastic(x, *args):
-                raise NotImplementedError
-
-        class Normalization:
-            def batch_norm(x, *args):
-                raise NotImplementedError
-
-            def layer_norm(x, *args):
-                raise NotImplementedError
-
-        class Initialization:
-            def xavier_init(shape: Tuple[int, int], seed, min, max) -> np.ndarray:
-                raise NotImplementedError
-
-            def he_init(shape: Tuple[int, int], seed, min, max) -> np.ndarray:
-                raise NotImplementedError
-
-            def random(shape: Tuple[int, int], seed, min, max) -> np.ndarray:
-                raise NotImplementedError
-
-        class WeightUpdate:
-            def no_momentum(
-                weights: np.ndarray, gradients: np.ndarray, learning_rate: float
-            ) -> np.ndarray:
-                raise NotImplementedError
-
-            def momentum(
-                weights: np.ndarray,
-                gradients: np.ndarray,
-                momentums: np.ndarray,
-                learning_rate: float,
-                prev_momentum: float,
-            ) -> np.ndarray:
-                raise NotImplementedError
-
-    class SingleCore(NeuralNetworkPlugins):
+    class SingleCore:
         class ActivationFunction:
             def sigmoid(x: np.ndarray) -> np.ndarray:
                 return 1 / (1 + np.exp(-x))
@@ -268,7 +158,6 @@ class MLPNetwork:
 
     multi_processing: bool
     shape: List[int]
-    processing_type: NeuralNetworkPlugins
 
     # methods
 
@@ -283,94 +172,54 @@ class MLPNetwork:
         learning_rate_scheduler: str = "constant",
         init_method: str = "random",
         activation_function: str = "sigmoid",
-        multi_processing: bool = False,
-        output_labels: List[str] = None,
         cost_function: str = "mean_squared_error",
     ):
-        """Assign multiprocessing"""
-
-        if multi_processing:
-            raise NotImplementedError("Multi Processing not yet implemented")
-
-        self.processing_type = self.MultiCore if multi_processing else self.SingleCore
-
-        """Asserts"""
+        # some basic asserts
 
         assert len(shape) > 2, "There must be at least 3 layers in the network. "
         assert all([isinstance(i, int) for i in shape]), "All layers must be integers. "
         assert all([i > 0 for i in shape]), "All layers must be greater than zero. "
-        assert (
-            learning_rate_scheduler
-            in self.processing_type.LearningRateScheduler.learning_rate_schedulers.keys()
-        ), f'Learning mode "{learning_rate_scheduler}" not supported'
-        assert (
-            init_method
-            in self.processing_type.Initialization.initialization_methods.keys()
-        ), f'Initialization method "{init_method}" not supported'
-        assert (
-            activation_function
-            in self.processing_type.ActivationFunction.activation_functions.keys()
-        ), f'Activation function "{self.activation_function}" not supported'
-        assert (
-            cost_function in self.processing_type.CostFunction.cost_functions.keys()
-        ), f'Cost function "{cost_function}" not supported'
 
-        """ Network Settings """
+        # assign layers to be our shape
 
         self.layers = shape
-        self.procesing_type = self.MultiCore if multi_processing else self.SingleCore
 
-        if output_labels is not None:
-            assert (
-                len(output_labels) == shape[-1]
-            ), "Output labels must match the number of output nodes. "
-            self.output_labels = output_labels
+        # assign our learning rate method
 
-        """ Learning Rate Handling """
-
-        self.learning_rate_scheduler = (
-            self.processing_type.LearningRateScheduler.learning_rate_schedulers[
-                learning_rate_scheduler
-            ]
+        self.learning_rate_scheduler = LearningRateScheduler.get(
+            learning_rate_scheduler
         )
         self.learning_rate = learning_rate
 
-        """ Weight Initialization handling """
+        # decide how we want to initialize our weights
 
-        self.init_method = self.processing_type.Initialization.initialization_methods[
-            init_method
-        ]
+        self.init_method = Initialization.get(init_method)
         self.weights = self.init_method(self.layers, seed, min, max)
 
-        """ Activation Function Handling """
+        # assign our activation function / derivative
 
         (
             self.activation_function,
             self.activation_fuction_derivative,
-        ) = self.processing_type.ActivationFunction.activation_functions[
-            activation_function
-        ]
+        ) = ActivationFunction.get(activation_function)
 
-        """ Momentum handling """
+        # assign momentum / weight update functions
 
-        if (
-            momentum > 0
-        ):  # having different weight update functions saves us from having to check for
-            # momentum in the update method
+        if momentum > 0:
             self.last_momentum = [
                 self.init_method((shape[i], shape[i + 1]))
                 for i in range(len(shape) - 1)
             ]
 
-            self.momentum = momentum
-            self.weight_update_function = self.SingleCore.WeightUpdate.momentum
+            self.weight_update_function = WeightUpdate.get("momentum")
         else:
-            self.weight_update_function = self.SingleCore.WeightUpdate.no_momentum
+            self.weight_update_function = WeightUpdate.get("none")
+        self.momentum = momentum
 
-        """ Cost Function Handling """
+        # assign our cost function
 
-        (self.loss_function, self.loss_function_derivative) = (
-            self.processing_type.CostFunction.cost_functions[cost_function]
+        self.loss_function, self.loss_function_derivative = CostFunction.get(
+            cost_function
         )
 
     def display(self) -> None:
