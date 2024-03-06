@@ -145,10 +145,10 @@ class MLPNetwork:
 
         return previous_output[:-1]  # because bias is always appended
 
-    def train(self, x: np.ndarray, y: np.ndarray) -> None:
+    def _train_iteration(self, x: np.ndarray, y: np.ndarray) -> None:
         weighted_sums = []
 
-        """Forward Pass (minus the activation function)"""
+        # compute the forward pass and store the weighted sums
 
         previous_output = np.atleast_2d(np.append(x, 1)).T
 
@@ -158,25 +158,36 @@ class MLPNetwork:
 
             weighted_sums.append(np.dot(layer, previous_output))
 
-            """ we need to forward pass but we only care about the sums """
+            # we only care about the weighted sum
 
             previous_output = np.append(self.activation_function(weighted_sums[-1]), 1)
 
-        """ Backward Pass """
+        # compute the backward pass, or derivative of the cost function
 
-        """ start by computing the error at the output layer """
-        """ E = loss_function(y, y_hat) """
-        """ LMS = \sum_{i=1}^{n} (y_i - y_hat_i)^2 """
+        error = [self.loss_function_derivative(y, previous_output[:-1])]
+        for layer in layers[:-1][::-1]:
+            error.append(self.loss_function_derivative(error[-1], layer))
+        error = error[::-1]  # reverse because we did this backwards
 
-        error = self.loss_function(y, previous_output[:-1])
+        # weight update
 
-        """ Then use delta rule to compute the error at output layer """
-        """ \delta = (y - y_hat) * \phi'(z) """
+        for i in range(len(layers)):
+            self.weights[i] = self.weight_update_function(
+                layers[i],
+                error[i],
+                self.learning_rate,
+            )
+
+    def train(self, x: np.ndarray, y: np.ndarray, epochs: int = 1000) -> None:
+        for _ in range(epochs):
+            self._train_iteration(x, y)
 
 
 if __name__ == "__main__":
-    layers = [4, 4, 1]
+    layers = [4, 4, 4, 1]
     mlp = MLPNetwork(layers)
     mlp.display()
     # print(mlp.predict(np.random.rand(layers[0])))
+    print("Model predicts: ", mlp.predict(np.array([0, 0, 0, 0])))
+    mlp.train(np.array([0, 0, 0, 0]), np.array([0]), 100000)
     print("Model predicts: ", mlp.predict(np.array([0, 0, 0, 0])))
